@@ -16,7 +16,6 @@
 package nl.talsmasoftware.indent4j;
 
 import java.io.Serializable;
-import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -165,7 +164,7 @@ public final class Indentation implements CharSequence, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(level, getUnit());
+        return value.hashCode();
     }
 
     @Override

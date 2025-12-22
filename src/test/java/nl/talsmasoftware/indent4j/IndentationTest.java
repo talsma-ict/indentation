@@ -18,6 +18,13 @@ package nl.talsmasoftware.indent4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -75,11 +82,11 @@ public class IndentationTest {
 
         // NONE.atLevel should maintain indentation levels
         for (int i = 2; i < 256; i++) {
-            Indentation tabsAtLevel = Indentation.TABS.atLevel(i);
-            assertThat(tabsAtLevel.getLevel()).isEqualTo(i);
-            assertThat(tabsAtLevel.getUnit()).isEqualTo("\t");
-            assertThat(tabsAtLevel.length()).isEqualTo(i);
-            assertThat(tabsAtLevel).matches(String.format("^\\t{%d}$", i));
+            Indentation atLevel = Indentation.TABS.atLevel(i);
+            assertThat(atLevel.getLevel()).isEqualTo(i);
+            assertThat(atLevel.getUnit()).isEqualTo("\t");
+            assertThat(atLevel.length()).isEqualTo(i);
+            assertThat(atLevel).matches(String.format("^\\t{%d}$", i));
         }
     }
 
@@ -470,109 +477,137 @@ public class IndentationTest {
                 .hasMessage("Indentation level may not be negative: -1");
     }
 
-//    @Test
-//    public void testSpacesWidth0() {
-//        final int width = 0;
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, -1), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0))));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.NONE)));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 1), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.NONE)));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 2), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.NONE)));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 6), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.NONE)));
-//    }
-//
-//    @Test
-//    public void testSpacesWidth1() {
-//        final int width = 1;
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, -1), is(equalTo(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0))));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0), hasToString(""));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 1), hasToString(" "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 2), hasToString("  "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 6), hasToString("      "));
-//    }
-//
-//    @Test
-//    public void testSpacesWidth2() {
-//        final int width = 2;
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, -1), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0))));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0), hasToString(""));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 1), hasToString("  "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 2), hasToString("    "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 6), hasToString("            "));
-//    }
-//
-//    @Test
-//    public void testSpacesWidth3() {
-//        final int width = 3;
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, -1), is(equalTo(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0))));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0), hasToString(""));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 1), hasToString("   "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 2), hasToString("      "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 6), hasToString("                  "));
-//    }
-//
-//    @Test
-//    public void testSpacesWidth4() {
-//        final int width = 4;
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, -1), is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0))));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 0), hasToString(""));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 1), hasToString("    "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 2), hasToString("        "));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(width, 6), hasToString("                        "));
-//    }
-//
-//    @Test
-//    public void testDeserialization() {
-//        nl.talsmasoftware.umldoclet.rendering.indent.Indentation deserialized = deserialize(serialize(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT));
-//        assertThat(deserialized, is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT)));
-//
-//        deserialized = deserialize(serialize(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(4, 3)));
-//        assertThat(deserialized, is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(4, 3))));
-//
-//        deserialized = deserialize(serialize(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.tabs(4)));
-//        assertThat(deserialized, is(sameInstance(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.tabs(4))));
-//
-//        deserialized = deserialize(serialize(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(1, 0)));
-//        assertThat(deserialized, is(equalTo(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(1, 0)))); // Not a constant; other instance
-//    }
-//
-//    @Test
-//    public void testHashcode() {
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT.hashCode(), is(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT.hashCode()));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(1, 15).hashCode(), is(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.spaces(1, 15).hashCode()));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.tabs(28).hashCode(), is(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.tabs(28).hashCode()));
-//    }
-//
-//    @Test
-//    public void testLenght() {
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT.length(), is(0));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT.increase().length(), is(4));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.DEFAULT.increase().increase().length(), is(8));
-//        assertThat(nl.talsmasoftware.umldoclet.rendering.indent.Indentation.tabs(5).length(), is(5));
-//    }
-//
-//    @Test
-//    public void testSubsequence() {
-//        assertThat(Indentation.DEFAULT.increase().increase().subSequence(3, 6), hasToString("   "));
-//    }
-//
-//    private static byte[] serialize(Serializable object) {
-//        try {
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-//                oos.writeObject(object);
-//            }
-//            return bos.toByteArray();
-//        } catch (IOException ioe) {
-//            throw new IllegalStateException("Couldn't serialize object: " + ioe.getMessage(), ioe);
-//        }
-//    }
-//
-//    @SuppressWarnings("unchecked")
-//    private static <S extends Serializable> S deserialize(byte[] bytes) {
-//        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-//            return (S) in.readObject();
-//        } catch (IOException | ClassNotFoundException e) {
-//            throw new IllegalStateException("Couldn't deserialize object: " + e.getMessage(), e);
-//        }
-//    }
+    @Test
+    @DisplayName("Indentation.length: Must be the indentation level times the unit length.")
+    void lengthMustBeCorrect() {
+        for (int i = 0; i < 512; i++) {
+            assertThat(Indentation.EMPTY.atLevel(i).length()).isZero();
+            assertThat(Indentation.TABS.atLevel(i).length()).isEqualTo(i);
+            assertThat(Indentation.TWO_SPACES.atLevel(i).length()).isEqualTo(2 * i);
+            assertThat(Indentation.FOUR_SPACES.atLevel(i).length()).isEqualTo(4 * i);
+        }
+    }
+
+    @Test
+    @DisplayName("Indentation.charAt: Must throw IndexOutOfBoundsException when index is out of bounds.")
+    void charAtBoundsCheck() {
+        assertThatThrownBy(() -> Indentation.EMPTY.charAt(-1)).isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> Indentation.EMPTY.charAt(0)).isInstanceOf(IndexOutOfBoundsException.class);
+    }
+
+    @Test
+    @DisplayName("Indentation.charAt: Must return the correct characters.")
+    void charAt() {
+        Indentation subject = Indentation.of("01234").atLevel(2);
+        assertThat(subject.charAt(0)).isEqualTo('0');
+        assertThat(subject.charAt(1)).isEqualTo('1');
+        assertThat(subject.charAt(2)).isEqualTo('2');
+        assertThat(subject.charAt(3)).isEqualTo('3');
+        assertThat(subject.charAt(4)).isEqualTo('4');
+        assertThat(subject.charAt(5)).isEqualTo('0');
+        assertThat(subject.charAt(6)).isEqualTo('1');
+        assertThat(subject.charAt(7)).isEqualTo('2');
+        assertThat(subject.charAt(8)).isEqualTo('3');
+        assertThat(subject.charAt(9)).isEqualTo('4');
+    }
+
+    @Test
+    @DisplayName("Indentation.subSequence: Must throw IndexOutOfBoundsException when index is out of bounds.")
+    void subSequenceBoundsCheck() {
+        assertThat(Indentation.EMPTY.subSequence(0, 0)).isEmpty();
+        assertThatThrownBy(() -> Indentation.EMPTY.subSequence(-1, 0)).isInstanceOf(IndexOutOfBoundsException.class);
+        assertThatThrownBy(() -> Indentation.EMPTY.subSequence(1, 0)).isInstanceOf(IndexOutOfBoundsException.class);
+    }
+
+    @Test
+    @DisplayName("Indentation.subSequence: Must return the correct subsequence.")
+    void subSequence() {
+        Indentation subject = Indentation.of("01234").atLevel(2);
+        assertThat(subject.subSequence(0, 2)).isEqualTo("01");
+        assertThat(subject.subSequence(2, 4)).isEqualTo("23");
+        assertThat(subject.subSequence(4, 6)).isEqualTo("40");
+    }
+
+    @Test
+    @DisplayName("Indentation.hashCode: Must produce consistent results.")
+    void testHashCode() {
+        Indentation subject = Indentation.of("01234").atLevel(2);
+        assertThat(subject.hashCode()).hasSameHashCodeAs(subject);
+        assertThat(subject.hashCode()).hasSameHashCodeAs(Indentation.of("01234").atLevel(2));
+        assertThat(subject.hashCode()).hasSameHashCodeAs("0123401234");
+    }
+
+    @Test
+    @DisplayName("Indentation.equals: Other object must be an indentation with equal level and unit.")
+    void testEquals() {
+        Indentation subject = Indentation.of("01234").atLevel(2);
+        assertThat(subject.equals(null)).isFalse();
+        assertThat(subject.equals(subject.atLevel(0))).isFalse();
+        assertThat(subject.equals(subject.atLevel(1))).isFalse();
+        assertThat(subject.equals(subject.atLevel(2))).isTrue();
+        assertThat(subject.equals(subject.atLevel(3))).isFalse();
+        assertThat(subject.equals("0123401234")).isFalse();
+        assertThat(subject.equals(subject.indent().unindent())).isTrue();
+        // Check uncached indentation equality too.
+        assertThat(subject.equals(Indentation.of("01234").atLevel(2))).isTrue();
+        assertThat(subject.atLevel(10000).equals(Indentation.of("01234").atLevel(10000))).isTrue();
+    }
+
+    @Test
+    @DisplayName("Indentation serialization: Serializing + deserializing must return equal Indentation.")
+    void serializationMustBeReversible() {
+        Indentation subject = Indentation.of("01234").atLevel(2);
+        byte[] serialized = serialize(subject);
+        Indentation deserialized = deserialize(serialized);
+        assertThat(deserialized).isEqualTo(subject);
+    }
+
+    @Test
+    @DisplayName("Indentation serialization: Empty indentation returns same constant upon deserialization.")
+    void deserializationOfEmpty() {
+        Indentation deserialized = deserialize(serialize(Indentation.EMPTY));
+        assertThat(deserialized).isSameAs(Indentation.EMPTY);
+    }
+
+    @Test
+    @DisplayName("Indentation serialization: Indentation.TABS indentation returns cached constant upon deserialization.")
+    void deserializationOfTabs() {
+        Indentation deserialized = deserialize(serialize(Indentation.TABS.atLevel(4)));
+        assertThat(deserialized).isSameAs(Indentation.TABS.atLevel(4));
+    }
+
+    @Test
+    @DisplayName("Indentation serialization: Two spaces indentation returns cached constant upon deserialization.")
+    void deserializationOfTwoSpaces() {
+        Indentation deserialized = deserialize(serialize(Indentation.of("  ").atLevel(10)));
+        assertThat(deserialized).isSameAs(Indentation.TWO_SPACES.atLevel(10));
+    }
+
+    @Test
+    @DisplayName("Indentation serialization: Four spaces indentation returns cached constant upon deserialization.")
+    void deserializationOfFourSpaces() {
+        Indentation deserialized = deserialize(serialize(Indentation.FOUR_SPACES.atLevel(16)));
+        assertThat(deserialized).isSameAs(Indentation.FOUR_SPACES.atLevel(16));
+    }
+
+    static byte[] serialize(Serializable object) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(object);
+            oos.flush();
+            return baos.toByteArray();
+        } catch (IOException | RuntimeException e) {
+            throw new AssertionError("Serialization failure: " + e.getMessage(), e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends Serializable> T deserialize(byte[] bytes) {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+             ObjectInputStream ois = new ObjectInputStream(bais)) {
+            return (T) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new AssertionError("Deserialization failure: " + e.getMessage(), e);
+        }
+    }
 }
