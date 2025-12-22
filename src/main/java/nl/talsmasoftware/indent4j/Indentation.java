@@ -88,11 +88,10 @@ public final class Indentation implements CharSequence, Serializable {
         return createIndentation(unit.toString(), 5);
     }
 
-    private static Indentation createIndentation(String unit, int cacheSize) {
+    private static Indentation createIndentation(final String unit, final int cacheSize) {
         Indentation[] cache = new Indentation[Math.max(2, cacheSize)]; // getUnit requires cache size >= 2
         cache[0] = new Indentation(0, "", cache);
-        cache[1] = new Indentation(1, unit, cache);
-        for (int i = 2; i < cache.length; i++) {
+        for (int i = 1; i < cache.length; i++) {
             cache[i] = new Indentation(i, cache[i - 1].value + unit, cache);
         }
         return cache[0];
@@ -138,8 +137,11 @@ public final class Indentation implements CharSequence, Serializable {
             return cache[level];
         }
 
-        String unit = getUnit();
-        StringBuilder indentationBuilder = new StringBuilder(level * unit.length());
+        final String unit = getUnit();
+        if (unit.isEmpty()) {
+            return new Indentation(level, "", cache);
+        }
+        final StringBuilder indentationBuilder = new StringBuilder(level * unit.length());
         indentationBuilder.append(cache[cache.length - 1].value);
         for (int i = level - cache.length; i >= 0; i--) {
             indentationBuilder.append(unit);
