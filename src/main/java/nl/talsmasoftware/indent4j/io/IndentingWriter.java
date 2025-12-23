@@ -21,88 +21,91 @@ import nl.talsmasoftware.indent4j.Indentation;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
 /**
- * Writer implementation that will indent each new line with a specified indentation.
+ * Writer implementation that indents each new line with a specified indentation.
+ *
  * <p>
  * The writing itself can be delegated to any other {@link Appendable} implementation.
+ *
+ * <p>
+ * The writer provides <strong>no buffering</strong>.
+ * To buffer the output, make sure the delegate is a {@link java.io.BufferedWriter BufferedWriter}.
  *
  * @author Sjoerd Talsma
  */
 public class IndentingWriter extends Writer {
-    // TODO Make indentation a mutable field so the same writer can be reused?
 
     private final Appendable delegate;
-    private Indentation indentation;
-    private char lastWritten;
+    private volatile Indentation indentation;
+    private volatile char lastWritten;
 
-    protected IndentingWriter(Appendable delegate, Indentation indentation) {
-        this(delegate, indentation, '\n');
-    }
-
-    private IndentingWriter(Appendable delegate, Indentation indentation, char lastWritten) {
-        super(requireNonNull(delegate, "Delegate writer is required."));
+    public IndentingWriter(Appendable delegate, Indentation indentation) {
+        super(requireNonNull(delegate, "Delegate appendable is required."));
         this.delegate = delegate;
-        this.indentation = indentation == null ? Indentation.TABS : indentation;
-        this.lastWritten = lastWritten;
+        this.indentation = requireNonNull(indentation, "Indentation is required.");
+        this.lastWritten = '\u0000'; // Initialize to null character.
     }
 
     /**
-     * Returns an indenting writer around the given <code>delegate</code>.<br>
-     * If the <code>delegate</code> writer is already an indenting writer, it will simply be returned
-     * {@link #withIndentation(Indentation) with the specified indentation}.<br>
-     * If the <code>delegate</code> writer is not yet an indending writer, a new indenting writer class will be created
-     * to wrap the delegate using the specified <code>indentation</code>.
+     * Increase the indentation level of this writer by one.
      *
-     * @param delegate    The delegate to turn into an indenting writer.
-     * @param indentation The indentation to use for the indenting writer.
-     * @return The indenting delegate writer.
+     * @return This writer, for chaining, with increaded indentation level.
+     * @see Indentation#indent()
      */
-    public static IndentingWriter wrap(Appendable delegate, Indentation indentation) {
-        return new IndentingWriter(delegate, indentation);
+    public IndentingWriter indent() {
+        setIndentation(() -> getIndentation().indent());
+        return this;
     }
 
+    /**
+     * Decrease the indentation level of this writer by one.
+     *
+     * @return This writer, for chaining, with decreased indentation level.
+     * @see Indentation#unindent()
+     */
+    public IndentingWriter unindent() {
+        setIndentation(() -> getIndentation().unindent());
+        return this;
+    }
+
+    /**
+     * The last-written character.
+     *
+     * <p>
+     * The last-written character is remembered to determine
+     * whether indentation must be inserted before the next character.
+     *
+     * <p>
+     * If no characters were written to this writer yet, the null-character ({@code '\u0000'}) is returned.
+     *
+     * @return The last-written character, or the null-character ({@code '\u0000'}) if no characters were written yet.
+     */
+    protected char getLastWritten() {
+        return lastWritten;
+    }
+
+    /**
+     * The current indentation.
+     *
+     * <p>
+     * To obtain the current indentation <em>level</em>, use {@link Indentation#getLevel()} of the returned indentation.
+     *
+     * @return The current indentation, never {@code null}.
+     * @see Indentation#getLevel()
+     */
     protected Indentation getIndentation() {
         return indentation;
     }
 
-    /**
-     * Returns an indenting writer with the new indentation.
-     *
-     * <p>
-     * Please note: Already written lines will not be modified to accomodate the new indentation.
-     *
-     * @param newIndentation The new indentation to apply to this writer (optional).
-     * @return Either this writer if the indentation is already correct,
-     * or a new IndentingWriter with the adapted indentation.
-     */
-    public IndentingWriter withIndentation(Indentation newIndentation) {
-        if (newIndentation != null && !newIndentation.equals(this.indentation)) {
-            synchronized (lock) {
-                this.indentation = newIndentation;
-            }
+    protected void setIndentation(Supplier<Indentation> newIndentation) {
+        requireNonNull(newIndentation, "Indentation supplier is required.");
+        synchronized (lock) {
+            this.indentation = requireNonNull(newIndentation.get(), "Indentation may not be <null>.");
         }
-        return this;
-    }
-
-    public IndentingWriter indent() {
-        return withIndentation(getIndentation().indent());
-    }
-
-    public IndentingWriter unindent() {
-        return withIndentation(getIndentation().unindent());
-    }
-
-    /**
-     * Tests whether the character is an end-of-line character.
-     *
-     * @param ch The character to be tested.
-     * @return <code>true</code> if the character was an end-of-line character, <code>false</code> otherwise.
-     */
-    private static boolean isEol(char ch) {
-        return ch == '\r' || ch == '\n';
     }
 
     @Override
@@ -112,7 +115,7 @@ public class IndentingWriter extends Writer {
             synchronized (lock) {
                 for (int i = 0; i < len; i++) {
                     ch = cbuf[off + i];
-                    if (isEol(lastWritten) && !isEol(ch)) {
+                    if (isEolOrNullChar(lastWritten) && !isEolOrNullChar(ch)) {
                         delegate.append(indentation);
                     }
                     delegate.append(ch);
@@ -124,25 +127,40 @@ public class IndentingWriter extends Writer {
 
     @Override
     public void flush() throws IOException {
-        if (delegate instanceof Flushable) ((Flushable) delegate).flush();
+        if (delegate instanceof Flushable) {
+            ((Flushable) delegate).flush();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        try {
-            if (delegate instanceof AutoCloseable) {
+        if (delegate instanceof AutoCloseable) {
+            try {
                 ((AutoCloseable) delegate).close();
+            } catch (IOException | RuntimeException rethrowable) {
+                throw rethrowable;
+            } catch (Exception e) {
+                throw new IOException("Could not close " + this + ": " + e.getMessage(), e);
             }
-        } catch (IOException | RuntimeException rethrowable) {
-            throw rethrowable;
-        } catch (Exception e) {
-            throw new IOException("Could not close " + this + ": " + e.getMessage(), e);
         }
     }
 
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    /**
+     * Tests whether the character is an end-of-line or null character.
+     *
+     * <p>
+     * The null character is used as last-written for new, 'still empty' indenting writers.
+     *
+     * @param ch The character to be tested.
+     * @return <code>true</code> if the character was an end-of-line or null character, <code>false</code> otherwise.
+     */
+    private static boolean isEolOrNullChar(char ch) {
+        return ch == '\r' || ch == '\n' || ch == '\u0000';
     }
 
 }
