@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2025 Talsma ICT
+    Copyright 2025-2026 Talsma ICT
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -67,6 +67,9 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+        <project.jdk.main>25</project.jdk.main>
+        <project.jdk.legacy>8</project.jdk.legacy>
+
         <!-- test -->
         <junit.version>5.13.4</junit.version>
         <assertj.version>3.27.4</assertj.version>
@@ -108,9 +111,6 @@
                             <goal>compile</goal>
                         </goals>
                         <configuration>
-                            <jdkToolchain>
-                                <version>[9,)</version>
-                            </jdkToolchain>
                             <release>9</release>
                             <includes>
                                 <include>module-info.java</include>
@@ -123,23 +123,37 @@
                             <goal>compile</goal>
                         </goals>
                         <configuration>
+                            <jdkToolchain>
+                                <version>${project.jdk.legacy}</version>
+                            </jdkToolchain>
+                            <source>8</source>
+                            <target>8</target>
                             <excludes>
                                 <exclude>module-info.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <release>${project.jdk.main}</release>
+                        </configuration>
+                    </execution>
                 </executions>
-                <configuration> <!-- defaults for compile and testCompile -->
+                <configuration>
                     <jdkToolchain>
-                        <version>8</version>
+                        <version>${project.jdk.main}</version>
                     </jdkToolchain>
-                    <source>8</source>
-                    <target>8</target>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <jdkToolchain>
+                        <version>${project.jdk.main}</version>
+                    </jdkToolchain>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -152,6 +166,11 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <jdkToolchain>
+                        <version>${project.jdk.main}</version>
+                    </jdkToolchain>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
@@ -177,19 +196,18 @@
                     </execution>
                 </executions>
             </plugin>
-<!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>generate-uml</id>
+                        <id>generate-javadoc</id>
                         <goals>
                             <goal>jar</goal>
                         </goals>
                         <configuration>
                             <jdkToolchain>
-                                <version>[9,)</version>
+                                <version>${project.jdk.main}</version>
                             </jdkToolchain>
                             <doclet>nl.talsmasoftware.umldoclet.UMLDoclet</doclet>
                             <docletArtifact>
@@ -213,7 +231,6 @@
                     </execution>
                 </executions>
             </plugin>
--->
         </plugins>
         <pluginManagement>
             <plugins>
