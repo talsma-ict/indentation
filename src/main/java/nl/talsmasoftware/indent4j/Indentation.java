@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Talsma ICT
+ * Copyright 2025-2026 Talsma ICT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,36 +19,24 @@ import java.io.Serializable;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Indentation to prepend to characters whenever printing on a new line.
- *
- * <p>
- * Indentation implements an immutable {@link CharSequence}.
- * Indenting and unindenting returns <em>other</em> object instances
- * and will <strong>not</strong> modify the original indentation itself.
- *
- * <p>
- * Indentation is serializable and will serialize minimally by retaining only the indentation unit and level.
- * Deserialization uses {@code Indentation.of(unit).atLevel(level)} to enable cache re-use for common indentations.
- *
- * @author Sjoerd Talsma
- */
+/// Indentation to prepend to characters whenever printing on a new line.
+///
+/// Indentation implements an immutable [CharSequence].
+/// Indenting and unindenting returns _other_ object instances
+/// and will **not** modify the original indentation itself.
+///
+/// Indentation is serializable and will serialize minimally by retaining only the indentation unit and level.
+/// Deserialization uses `Indentation.of(unit).atLevel(level)` to enable cache re-use for common indentations.
+///
+/// @author Sjoerd Talsma
 public final class Indentation implements CharSequence, Serializable {
-    /**
-     * Empty indentation, initialized at level 0. The indentation level is maintained and remains empty at all levels.
-     */
+    /// Empty indentation, initialized at level 0. The indentation level is maintained and remains empty at all levels.
     public static final Indentation EMPTY = createIndentation("", 2);
-    /**
-     * Indentation by tab characters, initialized at level 0.
-     */
+    /// Indentation by tab characters, initialized at level 0.
     public static final Indentation TABS = createIndentation("\t", 20);
-    /**
-     * Indentation by two spaces, initialized at level 0.
-     */
+    /// Indentation by two spaces, initialized at level 0.
     public static final Indentation TWO_SPACES = createIndentation("  ", 20);
-    /**
-     * Indentation by four spaces, initialized at level 0.
-     */
+    /// Indentation by four spaces, initialized at level 0.
     public static final Indentation FOUR_SPACES = createIndentation("    ", 20);
 
     private final transient int level;
@@ -61,15 +49,12 @@ public final class Indentation implements CharSequence, Serializable {
         this.cache = cache;
     }
 
-    /**
-     * Return an indentation, initialized at level 0.
-     *
-     * <p>
-     * Common indentations are available as static constants: {@link #TABS}, {@link #TWO_SPACES}, {@link #FOUR_SPACES}.
-     *
-     * @param unit The indentation unit that will be repeated for each level of indentation.
-     * @return The indentation.
-     */
+    /// Return an indentation, initialized at level 0.
+    ///
+    /// Common indentations are available as static constants: [#TABS], [#TWO_SPACES], [#FOUR_SPACES].
+    ///
+    /// @param unit The indentation unit that will be repeated for each level of indentation.
+    /// @return The indentation.
     public static Indentation of(CharSequence unit) {
         if (unit instanceof Indentation) {
             return ((Indentation) unit).atLevel(0);
@@ -97,37 +82,48 @@ public final class Indentation implements CharSequence, Serializable {
         return cache[0];
     }
 
-    /**
-     * Increase the indentation level by one.
-     *
-     * @return The indentation with increased level.
-     * @implSpec The original indentation object is not modified, instead another indentation instance is returned.
-     */
+    /// Increase the indentation level by one.
+    ///
+    /// @return The indentation with increased level.
+    /// @implSpec The original indentation object is not modified, instead another indentation instance is returned.
     public Indentation indent() {
         return atLevel(level + 1);
     }
 
-    /**
-     * Decrease the indentation level by one.
-     *
-     * <p>
-     * The level will never become negative. Calling {@code unindent()} on an indentation at level 0
-     * will simply return the same indentation.
-     *
-     * @return The indentation with decreased level.
-     */
+    /// Decrease the indentation level by one.
+    ///
+    /// The level will never become negative. Calling `unindent()` on an indentation at level 0
+    /// will simply return the same indentation.
+    ///
+    /// @return The indentation with decreased level.
     public Indentation unindent() {
         return level == 0 ? this : atLevel(level - 1);
     }
 
+    /// The level of this indentation
+    ///
+    /// This is the number of [units][#getUnit()] this indentation represents.
+    ///
+    /// @return The level of this indentation
     public int getLevel() {
         return level;
     }
 
+    /// The 'unit' of this indentation.
+    ///
+    /// By definition, the indentation Unit is equal to the [#toString()] representation
+    /// of this indentation [at level][#atLevel(int)] 1.
+    ///
+    /// @return The unit of this indentation.
     public String getUnit() {
         return cache[1].value;
     }
 
+    /// Returns this indentation at the specified level.
+    ///
+    /// @param level The indentation level.
+    /// @return This indentation at the specified level.
+    /// @implNote This will return cached `Indentation` instances if available.
     public Indentation atLevel(int level) {
         if (level < 0) {
             throw new IllegalArgumentException("Indentation level may not be negative: " + level);
@@ -149,11 +145,20 @@ public final class Indentation implements CharSequence, Serializable {
         return new Indentation(level, indentationBuilder.toString(), cache);
     }
 
+    /// The length of this indentation.
+    ///
+    /// By definition, this must be equal to `getLevel() * getUnit().length()`.
+    ///
+    /// @return The length of this indentation in numbers of characters.
     @Override
     public int length() {
         return value.length();
     }
 
+    /// Returns the char value at the specified index.
+    ///
+    /// @param index The index of the character to be returned.
+    /// @return The character at the specified index in this indentation.
     @Override
     public char charAt(int index) {
         return value.charAt(index);
@@ -181,6 +186,14 @@ public final class Indentation implements CharSequence, Serializable {
         return value;
     }
 
+    /// Returns a compact serialization proxy for this indentation.
+    ///
+    /// The proxy only contains the indentation [unit][#getUnit()] and [level][#getLevel()].
+    ///
+    /// Deserialization of this proxy calls `Indentation.of(unit).atLevel(level)`
+    /// allowing cached Indentation instances to be restored.
+    ///
+    /// @return A serialization proxy for this indentation.
     private Object writeReplace() {
         return new SerializationProxy(this);
     }
