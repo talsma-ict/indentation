@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-/// Module containing [indentation][nl.talsmasoftware.indent4j] utilities for Java.
-module nl.talsmasoftware.indent4j {
-    exports nl.talsmasoftware.indent4j;
+/// Module containing [indentation][nl.talsmasoftware.indentation] utilities for Java.
+module nl.talsmasoftware.indentation {
+    exports nl.talsmasoftware.indentation;
 }

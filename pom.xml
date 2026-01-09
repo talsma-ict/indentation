@@ -24,7 +24,7 @@
 
     <!-- Artifact identification -->
     <groupId>nl.talsmasoftware</groupId>
-    <artifactId>indent4j</artifactId>
+    <artifactId>indentation</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 

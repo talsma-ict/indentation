@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Talsma ICT
+ * Copyright 2025-2026 Talsma ICT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.talsmasoftware.indent4j.io;
+package nl.talsmasoftware.indentation.io;
 
 
-import nl.talsmasoftware.indent4j.Indentation;
+import nl.talsmasoftware.indentation.Indentation;
 
 import java.io.Flushable;
 import java.io.IOException;

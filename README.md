@@ -1,4 +1,4 @@
-# Indent4J - Indentation utilities for Java
+# Indentation utilities for Java
 
 ## Indentation
 
@@ -22,8 +22,8 @@ To create another `Indentation` instance, use the `Indentation.of(CharSequence)`
 This returns an `Indentation` instance that uses the given `CharSequence` as indentation unit.
 
 Indentations start at level 0 and can be _indented_ and _unindented_.
-Both operations return other Indentation instances, because indentation objects are immutable.
-This is by design so they can be safely cached and reused without worrying about their state changing.
+Both operations return other Indentation instances, as Indentation is designed to be immutable.
+This allows for safely caching and reusing Indentations without worrying about their state changing.
 
 ### Caching
 

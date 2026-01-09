@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Talsma ICT
+ * Copyright 2025-2026 Talsma ICT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.talsmasoftware.indent4j;
+package nl.talsmasoftware.indentation;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
