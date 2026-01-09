@@ -1,0 +1,44 @@
+name: Build and test
+
+on:
+  pull_request:
+    branches: [ 'develop', 'master', 'main' ]
+  push:
+    branches: [ 'develop', 'master', 'main' ]
+
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: |
+            8
+            25
+          mvn-toolchain-id: |
+            jdk8
+            jdk25
+          cache: maven
+      - name: Cache Sonar packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Pre-cache maven plugins and dependencies
+        run: ./mvnw --batch-mode --no-snapshot-updates -Dsilent dependency:resolve-plugins -Plicense-check -Pmaven-central -Psonar
+      - name: Build with Maven
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./mvnw --batch-mode clean verify
+      - name: Coveralls
+        uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
