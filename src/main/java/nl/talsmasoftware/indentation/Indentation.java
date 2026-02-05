@@ -70,7 +70,7 @@ public final class Indentation implements CharSequence, Serializable {
             return FOUR_SPACES;
         }
 
-        return createIndentation(unit.toString(), 5);
+        return createIndentation(unit.toString(), 10);
     }
 
     private static Indentation createIndentation(final String unit, final int cacheSize) {
@@ -134,15 +134,19 @@ public final class Indentation implements CharSequence, Serializable {
             return cache[level];
         }
 
-        final String unit = getUnit();
-        if (unit.isEmpty()) {
+        final int unitLength = cache[1].length();
+        if (unitLength == 0) {
             return new Indentation(level, "", cache);
         }
-        final StringBuilder indentationBuilder = new StringBuilder(level * unit.length());
-        indentationBuilder.append(cache[cache.length - 1].value);
-        for (int i = level - cache.length; i >= 0; i--) {
-            indentationBuilder.append(unit);
+
+        final StringBuilder indentationBuilder = new StringBuilder(level * unitLength);
+        final int last = cache.length - 1; // use last-cached as 'block' to be copied
+        int remaining = level;
+        while (remaining > last) {
+            indentationBuilder.append(cache[last].value);
+            remaining -= last;
         }
+        indentationBuilder.append(cache[remaining].value);
         return new Indentation(level, indentationBuilder.toString(), cache);
     }
 
