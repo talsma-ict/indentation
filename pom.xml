@@ -23,7 +23,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Artifact identification -->
-    <groupId>nl.talsmasoftware</groupId>
+    <groupId>nl.talsmasoftware.indentation</groupId>
     <artifactId>indentation</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
