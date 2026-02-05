@@ -125,11 +125,12 @@ public final class Indentation implements CharSequence, Serializable {
     /// @return This indentation at the specified level.
     /// @implNote This will return cached `Indentation` instances if available.
     public Indentation atLevel(int level) {
-        if (level < 0) {
-            throw new IllegalArgumentException("Indentation level may not be negative: " + level);
-        } else if (level == this.level) {
+        if (level == this.level) {
             return this;
         } else if (level < cache.length) {
+            if (level < 0) {
+                throw new IllegalArgumentException("Indentation level may not be negative: " + level);
+            }
             return cache[level];
         }
 
