@@ -19,14 +19,38 @@ import java.io.Serializable;
 
 import static java.util.Objects.requireNonNull;
 
-/// Indentation to prepend to characters whenever printing on a new line.
+/// Indentation to prepend at the beginning of new lines.
 ///
-/// Indentation implements an immutable [CharSequence].
-/// Methods like `indent()`, `unindent()` and `atLevel(..)` return _other_ instances
-/// and will not modify the original indentation itself.
+/// ## Usage
 ///
-/// Indentation is serializable and will serialize minimally by retaining only the indentation unit and level.
-/// Deserialization uses `Indentation.of(unit).atLevel(level)` to enable constant and cache re-use.
+/// Instead of calling a _constructor_, indentations are obtained by [Indentation.of(_unit_)][#of(CharSequence)].
+///
+/// Increasing and decreasing indentation levels by one [unit][#getUnit()]
+/// is achieved using [#indent()] / [#unindent()].
+/// Indentation level can be set randomly by [atLevel(_level_)][#atLevel(int)].
+///
+/// Instead of a constructor (e.g. something like `new Indentation("\t", 4)` for an indentation of 4 tabs),
+/// you should use:
+/// - `Indentation.of("\t").atLevel(4)` or, even better:
+/// - `Indentation.TABS.atLevel(4)`.
+///
+/// ## Caching
+///
+/// The first _16_ indentation levels are cached*, so indenting / unindenting is optimized for most 'normal' use cases.
+///
+/// (*) For the constants [#TABS], [#TWO_SPACES] and [#FOUR_SPACES], the first _32_ levels are cached.
+///
+/// ## Serialization
+///
+/// The class is [Serializable], minimizing space by retaining only
+/// the indentation [unit][#getUnit()] and [level][#getLevel()].
+///
+/// ## Immutability
+///
+/// This class implements an _immutable_ [CharSequence].
+///
+/// Methods like [#indent()], [#unindent()] and [atLevel(...)][#atLevel(int)]
+/// return _other_ instances and will never modify the original indentation itself.
 ///
 /// @author Sjoerd Talsma
 public final class Indentation implements CharSequence, Serializable {
@@ -40,22 +64,37 @@ public final class Indentation implements CharSequence, Serializable {
     /// Indentation using tab characters, at level `0`.
     ///
     /// Calling [Indentation.of(`"\t"`)][#of(CharSequence)] returns this constant for efficiency.
-    public static final Indentation TABS = createIndentation("\t", 20);
+    public static final Indentation TABS = createIndentation("\t", 32);
 
     /// Indentation by two spaces, at level `0`.
     ///
     /// Calling [Indentation.of(...)][#of(CharSequence)] with _two spaces_ returns this constant for efficiency.
-    public static final Indentation TWO_SPACES = createIndentation("  ", 20);
+    public static final Indentation TWO_SPACES = createIndentation("  ", 32);
 
     /// Indentation by four spaces, at level `0`.
     ///
     /// Calling [Indentation.of(...)][#of(CharSequence)] with _four spaces_ returns this constant for efficiency.
-    public static final Indentation FOUR_SPACES = createIndentation("    ", 20);
+    public static final Indentation FOUR_SPACES = createIndentation("    ", 32);
 
+    /// Level of indentation as a non-negative integer.
     private final int level;
+
+    /// Indentation characters, as a concatenation of _level_ times the indentation [unit][#getUnit()].
     private final String value;
+
+    /// Cache of the first _n_ indentation levels of this indentation.
+    /// Cache must have `length >= 2` so we can refer to `cache[1].value` as unit.
     private final Indentation[] cache;
 
+    /// Private constructor setting all Indentation fields at once.
+    ///
+    /// This constructor is intentionally private.
+    /// Instead of calling a constructor, users should call
+    /// Indentation.[of(_unit_)][#of(CharSequence)].[atLevel(_level_)][#atLevel(int)]
+    /// which allows efficient [#indent()] / [#unindent()] performance.
+    ///
+    /// @see #of(CharSequence)
+    /// @see #atLevel(int)
     private Indentation(int level, String value, Indentation[] cache) {
         this.level = level;
         this.value = value;
@@ -83,7 +122,7 @@ public final class Indentation implements CharSequence, Serializable {
             return FOUR_SPACES;
         }
 
-        return createIndentation(unit.toString(), 10);
+        return createIndentation(unit.toString(), 16);
     }
 
     /// Creates a new indentation at level `0`, initializing a cache of specified size.
@@ -105,45 +144,28 @@ public final class Indentation implements CharSequence, Serializable {
     /// Increase the indentation level by one.
     ///
     /// @return The indentation with increased level.
-    /// @implSpec The original indentation object is not modified, instead another indentation instance is returned.
+    /// @implSpec The original indentation object is never modified, instead another indentation instance is returned.
     public Indentation indent() {
         return atLevel(level + 1);
     }
 
     /// Decrease the indentation level by one.
     ///
-    /// The level will never become negative. Calling `unindent()` on an indentation at level 0
+    /// The level will never become negative. Calling `unindent()` on an indentation at level `0`
     /// will simply return the same indentation.
     ///
     /// @return The indentation with decreased level.
+    /// @implSpec The original indentation object is never modified, instead another indentation instance is returned.
     public Indentation unindent() {
         return level == 0 ? this : atLevel(level - 1);
-    }
-
-    /// The level of this indentation
-    ///
-    /// This is the number of [units][#getUnit()] this indentation represents.
-    ///
-    /// @return The level of this indentation
-    public int getLevel() {
-        return level;
-    }
-
-    /// The 'unit' of this indentation.
-    ///
-    /// By definition, the indentation Unit is equal to the [#toString()] representation
-    /// of this indentation [at level][#atLevel(int)] 1.
-    ///
-    /// @return The unit of this indentation.
-    public String getUnit() {
-        return cache[1].value;
     }
 
     /// Returns this indentation at the specified level.
     ///
     /// @param level The indentation level.
     /// @return This indentation at the specified level.
-    /// @implNote This will return cached `Indentation` instances if available.
+    /// @implSpec The original indentation object is never modified, instead another indentation instance is returned.
+    /// @implNote Cached `Indentation` instances are returned if available.
     public Indentation atLevel(final int level) {
         if (level == this.level) {
             return this;
@@ -169,6 +191,25 @@ public final class Indentation implements CharSequence, Serializable {
         }
         buffer.append(block, 0, remaining);
         return new Indentation(level, buffer.toString(), cache);
+    }
+
+    /// The level of this indentation
+    ///
+    /// This is the number of [units][#getUnit()] this indentation represents.
+    ///
+    /// @return The level of this indentation
+    public int getLevel() {
+        return level;
+    }
+
+    /// The 'unit' of this indentation.
+    ///
+    /// By definition, the indentation Unit is equal to the [#toString()] representation
+    /// of this indentation [at level][#atLevel(int)] 1.
+    ///
+    /// @return The unit of this indentation.
+    public String getUnit() {
+        return cache[1].value;
     }
 
     /// The length of this indentation.

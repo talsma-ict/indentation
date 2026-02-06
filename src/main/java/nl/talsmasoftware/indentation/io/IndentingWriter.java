@@ -25,24 +25,27 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
-/**
- * Writer implementation that indents each new line with a specified indentation.
- *
- * <p>
- * The writing itself can be delegated to any other {@link Appendable} implementation.
- *
- * <p>
- * The writer provides <strong>no buffering</strong>.
- * To buffer the output, make sure the delegate is a {@link java.io.BufferedWriter BufferedWriter}.
- *
- * @author Sjoerd Talsma
- */
+/// Writer implementation that prepends each first character on a new line with a specified [Indentation].
+///
+/// The writing itself can be delegated to any other [Appendable] implementation.
+///
+/// This writer provides **no buffering** out of the box.
+/// To buffer the output, make sure the delegate is some type of [BufferedWriter][java.io.BufferedWriter]
+///
+/// @author Sjoerd Talsma
 public class IndentingWriter extends Writer {
 
     private final Appendable delegate;
     private final AtomicReference<Indentation> indentation;
     private volatile char lastWritten;
 
+    /// Constructor for a new indenting writer.
+    ///
+    /// Writes output to the specified `delegate`, applying the specified `indentation` before each
+    /// first character on a new line.
+    ///
+    /// @param delegate    The delegate to write the output to.
+    /// @param indentation The initial indentation to apply to this writer.
     public IndentingWriter(Appendable delegate, Indentation indentation) {
         super(requireNonNull(delegate, "Delegate appendable is required."));
         this.delegate = delegate;
@@ -50,57 +53,67 @@ public class IndentingWriter extends Writer {
         this.lastWritten = '\u0000'; // Initialize to null character.
     }
 
-    /**
-     * Increase the indentation level of this writer by one.
-     *
-     * @return This writer, for chaining, with increaded indentation level.
-     * @see Indentation#indent()
-     */
+    /// Increase the indentation level of this writer by one.
+    ///
+    /// @return Reference to this writer for method chaining purposes.
+    /// @see #unindent()
+    /// @see Indentation
     public IndentingWriter indent() {
         indentation.getAndUpdate(Indentation::indent);
         return this;
     }
 
-    /**
-     * Decrease the indentation level of this writer by one.
-     *
-     * @return This writer, for chaining, with decreased indentation level.
-     * @see Indentation#unindent()
-     */
+    /// Decrease the indentation level of this writer by one.
+    ///
+    /// Unindenting cannot result in a negative indentation level.
+    /// In other words, if the indentation level is already `0`, calling `unindent()` will have no effect.
+    ///
+    /// @return Reference to this writer for method chaining purposes.
+    /// @see #indent()
+    /// @see Indentation
     public IndentingWriter unindent() {
         indentation.getAndUpdate(Indentation::unindent);
         return this;
     }
 
-    /**
-     * The last-written character.
-     *
-     * <p>
-     * The last-written character is remembered to determine
-     * whether indentation must be inserted before the next character.
-     *
-     * <p>
-     * If no characters were written to this writer yet, the null-character ({@code '\u0000'}) is returned.
-     *
-     * @return The last-written character, or the null-character ({@code '\u0000'}) if no characters were written yet.
-     */
+    /// The last-written character.
+    ///
+    /// The writer remembers the last-written character
+    /// to determine whether indentation should be applied before the next character is written.
+    ///
+    /// If no characters were written to this writer yet, the null-character (`\u0000`) is returned.
+    ///
+    /// @return The last-written character, or the null-character (`\u0000`) if no characters were written yet.
     protected char getLastWritten() {
         return lastWritten;
     }
 
-    /**
-     * The current indentation.
-     *
-     * <p>
-     * To obtain the current indentation <em>level</em>, use {@link Indentation#getLevel()} of the returned indentation.
-     *
-     * @return The current indentation, never {@code null}.
-     * @see Indentation#getLevel()
-     */
+    /// The current indentation for this writer.
+    ///
+    /// To get the current indentation _level_, use [getLevel()][Indentation#getLevel()] on the returned indentation.
+    ///
+    /// Please beware that it may be possible to create _race conditions_ using [#getIndentation()]
+    /// and [#setIndentation(Indentation)] if the indentation somehow changes between these calls.
+    /// The [#indent()] / [#unindent()] operations are always applied atomically.
+    ///
+    /// @return The current indentation (never `null`).
+    /// @see #indent()
+    /// @see #unindent()
     protected Indentation getIndentation() {
         return indentation.get();
     }
 
+    /// Sets the current indentation for this writer.
+    ///
+    /// This new indentation will be applied before each first character on a new line.
+    ///
+    /// Please beware that it may be possible to create _race conditions_ using [#getIndentation()]
+    /// and [#setIndentation(Indentation)] if the indentation somehow changes between these calls.
+    /// The [#indent()] / [#unindent()] operations are always applied atomically.
+    ///
+    /// @param indentation The new indentation to use for this writer.
+    /// @see #indent()
+    /// @see #unindent()
     protected void setIndentation(Indentation indentation) {
         this.indentation.set(requireNonNull(indentation, "Indentation is required."));
     }
@@ -147,15 +160,13 @@ public class IndentingWriter extends Writer {
         return delegate.toString();
     }
 
-    /**
-     * Tests whether the character is an end-of-line or null character.
-     *
-     * <p>
-     * The null character is used as last-written for new, 'still empty' indenting writers.
-     *
-     * @param ch The character to be tested.
-     * @return <code>true</code> if the character was an end-of-line or null character, <code>false</code> otherwise.
-     */
+    /// Test whether the character is an end-of-line or null character.
+    ///
+    /// The null character (`\u0000`) is used as initial value for 'last-written character' in new,
+    /// 'still empty' indenting writers.
+    ///
+    /// @param ch The character to be tested.
+    /// @return `true` if the character was an end-of-line or null character, `false` otherwise.
     private static boolean isEolOrNullChar(char ch) {
         return ch == '\r' || ch == '\n' || ch == '\u0000';
     }
