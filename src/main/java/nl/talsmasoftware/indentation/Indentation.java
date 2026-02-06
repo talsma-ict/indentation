@@ -144,7 +144,7 @@ public final class Indentation implements CharSequence, Serializable {
     /// @param level The indentation level.
     /// @return This indentation at the specified level.
     /// @implNote This will return cached `Indentation` instances if available.
-    public Indentation atLevel(int level) {
+    public Indentation atLevel(final int level) {
         if (level == this.level) {
             return this;
         } else if (level < cache.length) {
@@ -159,14 +159,15 @@ public final class Indentation implements CharSequence, Serializable {
             return new Indentation(level, "", cache);
         }
 
-        final StringBuilder buffer = new StringBuilder(level * unitLength);
-        final int last = cache.length - 1; // use last-cached as 'block' to be copied
-        int remaining = level;
-        while (remaining > last) {
-            buffer.append(cache[last].value);
-            remaining -= last;
+        // Copy larger of: 'this.value' or last-cached repeatedly until the buffer is filled.
+        int remaining = level * unitLength;
+        final StringBuilder buffer = new StringBuilder(remaining);
+        final String block = this.level >= cache.length ? this.value : cache[cache.length - 1].value;
+        while (remaining > block.length()) {
+            buffer.append(block);
+            remaining -= block.length();
         }
-        buffer.append(cache[remaining].value);
+        buffer.append(block, 0, remaining);
         return new Indentation(level, buffer.toString(), cache);
     }
 
