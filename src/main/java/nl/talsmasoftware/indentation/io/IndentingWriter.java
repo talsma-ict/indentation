@@ -21,7 +21,7 @@ import nl.talsmasoftware.indentation.Indentation;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.Writer;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Objects.requireNonNull;
 
@@ -40,13 +40,13 @@ import static java.util.Objects.requireNonNull;
 public class IndentingWriter extends Writer {
 
     private final Appendable delegate;
-    private volatile Indentation indentation;
+    private final AtomicReference<Indentation> indentation;
     private volatile char lastWritten;
 
     public IndentingWriter(Appendable delegate, Indentation indentation) {
         super(requireNonNull(delegate, "Delegate appendable is required."));
         this.delegate = delegate;
-        this.indentation = requireNonNull(indentation, "Indentation is required.");
+        this.indentation = new AtomicReference<>(requireNonNull(indentation, "Indentation is required."));
         this.lastWritten = '\u0000'; // Initialize to null character.
     }
 
@@ -57,7 +57,7 @@ public class IndentingWriter extends Writer {
      * @see Indentation#indent()
      */
     public IndentingWriter indent() {
-        setIndentation(() -> getIndentation().indent());
+        indentation.getAndUpdate(Indentation::indent);
         return this;
     }
 
@@ -68,7 +68,7 @@ public class IndentingWriter extends Writer {
      * @see Indentation#unindent()
      */
     public IndentingWriter unindent() {
-        setIndentation(() -> getIndentation().unindent());
+        indentation.getAndUpdate(Indentation::unindent);
         return this;
     }
 
@@ -98,14 +98,11 @@ public class IndentingWriter extends Writer {
      * @see Indentation#getLevel()
      */
     protected Indentation getIndentation() {
-        return indentation;
+        return indentation.get();
     }
 
-    protected void setIndentation(Supplier<Indentation> newIndentation) {
-        requireNonNull(newIndentation, "Indentation supplier is required.");
-        synchronized (lock) {
-            this.indentation = requireNonNull(newIndentation.get(), "Indentation may not be <null>.");
-        }
+    protected void setIndentation(Indentation indentation) {
+        this.indentation.set(requireNonNull(indentation, "Indentation is required."));
     }
 
     @Override
@@ -116,7 +113,7 @@ public class IndentingWriter extends Writer {
                 for (int i = 0; i < len; i++) {
                     ch = cbuf[off + i];
                     if (isEolOrNullChar(lastWritten) && !isEolOrNullChar(ch)) {
-                        delegate.append(indentation);
+                        delegate.append(indentation.get());
                     }
                     delegate.append(ch);
                     lastWritten = ch;

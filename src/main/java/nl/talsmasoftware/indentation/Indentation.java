@@ -22,26 +22,39 @@ import static java.util.Objects.requireNonNull;
 /// Indentation to prepend to characters whenever printing on a new line.
 ///
 /// Indentation implements an immutable [CharSequence].
-/// Indenting and unindenting returns _other_ object instances
-/// and will **not** modify the original indentation itself.
+/// Methods like `indent()`, `unindent()` and `atLevel(..)` return _other_ instances
+/// and will not modify the original indentation itself.
 ///
 /// Indentation is serializable and will serialize minimally by retaining only the indentation unit and level.
-/// Deserialization uses `Indentation.of(unit).atLevel(level)` to enable cache re-use for common indentations.
+/// Deserialization uses `Indentation.of(unit).atLevel(level)` to enable constant and cache re-use.
 ///
 /// @author Sjoerd Talsma
 public final class Indentation implements CharSequence, Serializable {
-    /// Empty indentation, initialized at level 0. The indentation level is maintained and remains empty at all levels.
+    /// Empty indentation, at level `0`.
+    ///
+    /// Although the indentation level is maintained, the indentation itself remains empty at all levels.
+    ///
+    /// Calling [Indentation.of(`""``)][#of(CharSequence)] returns this constant for efficiency.
     public static final Indentation EMPTY = createIndentation("", 2);
-    /// Indentation by tab characters, initialized at level 0.
+
+    /// Indentation using tab characters, at level `0`.
+    ///
+    /// Calling [Indentation.of(`"\t"`)][#of(CharSequence)] returns this constant for efficiency.
     public static final Indentation TABS = createIndentation("\t", 20);
-    /// Indentation by two spaces, initialized at level 0.
+
+    /// Indentation by two spaces, at level `0`.
+    ///
+    /// Calling [Indentation.of(...)][#of(CharSequence)] with _two spaces_ returns this constant for efficiency.
     public static final Indentation TWO_SPACES = createIndentation("  ", 20);
-    /// Indentation by four spaces, initialized at level 0.
+
+    /// Indentation by four spaces, at level `0`.
+    ///
+    /// Calling [Indentation.of(...)][#of(CharSequence)] with _four spaces_ returns this constant for efficiency.
     public static final Indentation FOUR_SPACES = createIndentation("    ", 20);
 
-    private final transient int level;
-    private final transient String value;
-    private final transient Indentation[] cache;
+    private final int level;
+    private final String value;
+    private final Indentation[] cache;
 
     private Indentation(int level, String value, Indentation[] cache) {
         this.level = level;
@@ -73,11 +86,18 @@ public final class Indentation implements CharSequence, Serializable {
         return createIndentation(unit.toString(), 10);
     }
 
+    /// Creates a new indentation at level `0`, initializing a cache of specified size.
+    ///
+    /// @param unit      The indentation unit. This is the indentation at level `1`.
+    /// @param cacheSize The number of Indentations to cache. If less than 2 is specified, a minimal cache containing levels `0` (empty) and `1` is created.
+    /// @return The new indentation (with cache) that was created, initially at level `0`.
     private static Indentation createIndentation(final String unit, final int cacheSize) {
-        Indentation[] cache = new Indentation[Math.max(2, cacheSize)]; // getUnit requires cache size >= 2
+        final Indentation[] cache = new Indentation[Math.max(2, cacheSize)]; // getUnit requires cache size >= 2
+        final StringBuilder buffer = new StringBuilder(unit.length() * cache.length);
         cache[0] = new Indentation(0, "", cache);
-        for (int i = 1; i < cache.length; i++) {
-            cache[i] = new Indentation(i, cache[i - 1].value + unit, cache);
+        for (int level = 1; level < cache.length; level++) {
+            buffer.append(unit);
+            cache[level] = new Indentation(level, buffer.toString(), cache);
         }
         return cache[0];
     }
@@ -139,15 +159,15 @@ public final class Indentation implements CharSequence, Serializable {
             return new Indentation(level, "", cache);
         }
 
-        final StringBuilder indentationBuilder = new StringBuilder(level * unitLength);
+        final StringBuilder buffer = new StringBuilder(level * unitLength);
         final int last = cache.length - 1; // use last-cached as 'block' to be copied
         int remaining = level;
         while (remaining > last) {
-            indentationBuilder.append(cache[last].value);
+            buffer.append(cache[last].value);
             remaining -= last;
         }
-        indentationBuilder.append(cache[remaining].value);
-        return new Indentation(level, indentationBuilder.toString(), cache);
+        buffer.append(cache[remaining].value);
+        return new Indentation(level, buffer.toString(), cache);
     }
 
     /// The length of this indentation.
@@ -203,6 +223,7 @@ public final class Indentation implements CharSequence, Serializable {
         return new SerializationProxy(this);
     }
 
+    ///  Serialization proxy containing _unit_ and _level_.
     private static final class SerializationProxy implements Serializable {
         private final String unit;
         private final int level;
@@ -212,6 +233,10 @@ public final class Indentation implements CharSequence, Serializable {
             this.level = indentation.getLevel();
         }
 
+        /// Recreates an equal Indentation to the original by calling
+        /// `Indentation.of(unit).atLevel(level)` enabling efficient reuse of constants and caches.
+        ///
+        /// @return Resolved Indentation instance.
         private Object readResolve() {
             return Indentation.of(unit).atLevel(level);
         }

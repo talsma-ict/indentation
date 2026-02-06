@@ -69,7 +69,7 @@ class IndentingWriterTest {
         try (IndentingWriter subject = new IndentingWriter(new StringWriter(), Indentation.TABS)) {
             for (int i = 0; i < 100; i++) {
                 final int level = i;
-                subject.setIndentation(() -> subject.getIndentation().atLevel(level));
+                subject.setIndentation(subject.getIndentation().atLevel(level));
                 assertThat(subject.getIndentation()).isEqualTo(Indentation.TABS.atLevel(level));
                 subject.indent();
                 assertThat(subject.getIndentation()).isEqualTo(Indentation.TABS.atLevel(level + 1));
