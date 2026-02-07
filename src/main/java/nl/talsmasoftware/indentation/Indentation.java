@@ -244,8 +244,8 @@ public final class Indentation implements CharSequence, Serializable {
     @Override
     public boolean equals(Object other) {
         return this == other || (other instanceof Indentation
-                && this.level == ((Indentation) other).level)
-                && this.getUnit().equals(((Indentation) other).getUnit());
+                && this.level == ((Indentation) other).level
+                && this.getUnit().equals(((Indentation) other).getUnit()));
     }
 
     @Override
