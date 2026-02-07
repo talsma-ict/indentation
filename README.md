@@ -28,10 +28,10 @@ This allows for safe caching and reuse without worrying about internal state cha
 
 ### Caching
 
-For efficiency reasons, the constants `EMPTY`, `TABS`, `TWO_SPACES` and `FOUR_SPACES` cache the first _twenty_ levels of
-indentation.
-Indentations created with `Indentation.of(..)` resolve to these constants if applicable.
-Other instances created with `Indentation.of(..)` cache the first _ten_ indentation levels.
+For efficiency reasons, the first indentation levels are cached.
+
+Indentations created with `Indentation.of(..)` resolve to the defined 
+constants (`EMPTY`, `TABS`, `TWO_SPACES` or `FOUR_SPACES`) if applicable.
 
 ### Serialization / deserialization
 
