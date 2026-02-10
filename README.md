@@ -2,8 +2,7 @@
 
 ## Indentation
 
-Core of this libary is the `Indentation` class.  
-Indentation is a `CharSequence` that can be used to prefix lines in structured text.
+The `Indentation` class is an immutable `CharSequence` to prepend at the beginning of new lines.
 
 Indentations consist of:
 
@@ -39,3 +38,9 @@ Indentations are `Serializable`.
 
 To conserve space, indentations serialize a _proxy_ of the indentation _unit_ and _level_.  
 Deserialization uses `Indentation.of(unit).atLevel(level)`, enabling efficient reuse of constants and caches.
+
+## IndentingWriter
+
+A writer that automatically applies a _current_ indentation to each line.
+
+The current indentation can be changed by calling `indent()` or `unindent()`.
