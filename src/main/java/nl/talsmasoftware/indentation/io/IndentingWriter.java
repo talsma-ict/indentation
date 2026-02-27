@@ -34,9 +34,11 @@ import static java.util.Objects.requireNonNull;
 ///
 /// @author Sjoerd Talsma
 public class IndentingWriter extends Writer {
-
+    /// The delegate to write to.
     private final Appendable delegate;
+    /// The current indentation for this writer.
     private final AtomicReference<Indentation> indentation;
+    /// The last-written character, or the null-character (`\u0000`) if no characters were written yet.
     private volatile char lastWritten;
 
     /// Constructor for a new indenting writer.
@@ -92,9 +94,9 @@ public class IndentingWriter extends Writer {
     ///
     /// To get the current indentation _level_, use [getLevel()][Indentation#getLevel()] on the returned indentation.
     ///
-    /// Please beware that it may be possible to create _race conditions_ using [#getIndentation()]
+    /// Please beware that _race conditions_ are possible between [#getIndentation()]
     /// and [#setIndentation(Indentation)] if the indentation somehow changes between these calls.
-    /// The [#indent()] / [#unindent()] operations are always applied atomically.
+    /// The [#indent()] / [#unindent()] operations are applied atomically.
     ///
     /// @return The current indentation (never `null`).
     /// @see #indent()
@@ -118,6 +120,13 @@ public class IndentingWriter extends Writer {
         this.indentation.set(requireNonNull(indentation, "Indentation is required."));
     }
 
+    /// Writes a portion of an array of characters to the delegate.
+    ///
+    /// Each 'first' character on a new line is prepended with the current [Indentation].
+    ///
+    /// @param cbuf The character buffer to write the characters from.
+    /// @param off The offset of the first character to write.
+    /// @param len The number of characters to write.
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         if (len > 0) {
@@ -135,6 +144,9 @@ public class IndentingWriter extends Writer {
         }
     }
 
+    /// Flushes the delegate if flushable.
+    ///
+    /// @throws IOException if thrown by the delegate.
     @Override
     public void flush() throws IOException {
         if (delegate instanceof Flushable) {
@@ -142,6 +154,9 @@ public class IndentingWriter extends Writer {
         }
     }
 
+    /// Closes the delegate if closeable.
+    ///
+    /// @throws IOException if thrown by the delegate. Other checked exceptions are wrapped in a new IOException.
     @Override
     public void close() throws IOException {
         if (delegate instanceof AutoCloseable) {
@@ -155,6 +170,9 @@ public class IndentingWriter extends Writer {
         }
     }
 
+    /// Returns the toString representation of the delegate.
+    ///
+    /// @return The `toString()` result from the delegate.
     @Override
     public String toString() {
         return delegate.toString();

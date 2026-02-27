@@ -231,16 +231,33 @@ public final class Indentation implements CharSequence, Serializable {
         return value.charAt(index);
     }
 
+    /// Subsequence simply returns the substring of this indentation value.
+    ///
+    /// @param start The index of the first character in the subsequence.
+    /// @param end   The index _after_ the last character in the subsequence.
+    /// @return The specified subsequence.
+    /// @see String#substring(int, int)
     @Override
     public CharSequence subSequence(int start, int end) {
         return value.substring(start, end);
     }
 
+    /// The hashcode of this indentation.
+    ///
+    /// @return The hashcode of this indentation.
+    /// @implNote The implementation returns the same result as what `this.toString().hashCode()` would yield.
     @Override
     public int hashCode() {
         return value.hashCode();
     }
 
+    /// Whether the specified object is the same indentation as this object.
+    ///
+    /// Two indentations are considered equal if and only if they have
+    /// the same indentation [level][#getLevel()] and [unit][#getUnit()].
+    ///
+    /// @param other The other object to compare this indentation to.
+    /// @return `true` if the other object is an indentation with the same _level_ and _unit_, otherwise `false`.
     @Override
     public boolean equals(Object other) {
         return this == other || (other instanceof Indentation
@@ -248,6 +265,9 @@ public final class Indentation implements CharSequence, Serializable {
                 && this.getUnit().equals(((Indentation) other).getUnit()));
     }
 
+    /// This indentation represented as a string.
+    ///
+    /// @return The string representation for this indentation, equivalent to _level_ times the _unit_ repeated.
     @Override
     public String toString() {
         return value;
@@ -265,11 +285,16 @@ public final class Indentation implements CharSequence, Serializable {
         return new SerializationProxy(this);
     }
 
-    ///  Serialization proxy containing _unit_ and _level_.
+    ///  Serialization proxy containing only [unit][#getUnit()] and [level][#getLevel()].
     private static final class SerializationProxy implements Serializable {
+        /// The [unit][#getUnit()] of the serialized indentation.
         private final String unit;
+        /// The [level][#getLevel()] of the serialized indentation.
         private final int level;
 
+        /// Constructor for a new serialization proxy for the specified indentation.
+        ///
+        /// @param indentation The indentation to be serialized.
         private SerializationProxy(Indentation indentation) {
             this.unit = indentation.getUnit();
             this.level = indentation.getLevel();
