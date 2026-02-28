@@ -189,4 +189,24 @@ public class IndentingWriter extends Writer {
         return ch == '\r' || ch == '\n' || ch == '\u0000';
     }
 
+    /// Override to return more specific writer class for method chaining purposes.
+    /// {@inheritDoc}
+    @Override
+    public IndentingWriter append(CharSequence csq) throws IOException {
+        return (IndentingWriter) super.append(csq);
+    }
+
+    /// Override to return more specific writer class for method chaining purposes.
+    /// {@inheritDoc}
+    @Override
+    public IndentingWriter append(CharSequence csq, int start, int end) throws IOException {
+        return (IndentingWriter) super.append(csq, start, end);
+    }
+
+    /// Override to return more specific writer class for method chaining purposes.
+    /// {@inheritDoc}
+    @Override
+    public IndentingWriter append(char c) throws IOException {
+        return (IndentingWriter) super.append(c);
+    }
 }

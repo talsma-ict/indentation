@@ -204,4 +204,14 @@ class IndentingWriterTest {
                 .isInstanceOf(IOException.class)
                 .hasCause(checkedException);
     }
+
+    @Test
+    @DisplayName("append: Returns IndentingWriter type for method chaining.")
+    void appendMethodChaining() throws IOException {
+        IndentingWriter subject = new IndentingWriter(new StringWriter(), Indentation.TABS);
+
+        assertThat(subject.append('a').append("b").append("abcdef", 2, 3))
+                .isInstanceOf(IndentingWriter.class)
+                .hasToString("abc");
+    }
 }
