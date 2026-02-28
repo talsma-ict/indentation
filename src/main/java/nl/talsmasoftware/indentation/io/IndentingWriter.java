@@ -210,15 +210,15 @@ public class IndentingWriter extends Writer {
         return (IndentingWriter) super.append(c);
     }
 
-    /// Appends each line followed by a [System#lineSeparator()].
+    /// Appends lines followed by a [System#lineSeparator()].
     ///
-    /// - Makes sure that if the last-written character was not a line separator,
-    /// an initial line separator is appended to finish a previously unfinished line.
+    /// - If the last-written character was not a line separator,
+    /// an initial line separator is appended to finish any previously unfinished line.
     /// - Next, each line is appended, applying the current indentation, followed by a line separator.
     ///
     /// @param lines Zero or more lines to append to this writer, applying indentation.
     /// @return Reference to this indenting writer for chaining purposes.
-    public IndentingWriter writeLines(CharSequence... lines) throws IOException {
+    public IndentingWriter writeln(CharSequence... lines) throws IOException {
         final String lineSeparator = System.lineSeparator();
         if (!isEolOrNullChar(lastWritten)) {
             append(lineSeparator);
