@@ -125,8 +125,8 @@ public class IndentingWriter extends Writer {
     /// Each 'first' character on a new line is prepended with the current [Indentation].
     ///
     /// @param cbuf The character buffer to write the characters from.
-    /// @param off The offset of the first character to write.
-    /// @param len The number of characters to write.
+    /// @param off  The offset of the first character to write.
+    /// @param len  The number of characters to write.
     @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         if (len > 0) {
@@ -208,5 +208,24 @@ public class IndentingWriter extends Writer {
     @Override
     public IndentingWriter append(char c) throws IOException {
         return (IndentingWriter) super.append(c);
+    }
+
+    /// Appends each line followed by a [System#lineSeparator()].
+    ///
+    /// - Makes sure that if the last-written character was not a line separator,
+    /// an initial line separator is appended to finish a previously unfinished line.
+    /// - Next, each line is appended, applying the current indentation, followed by a line separator.
+    ///
+    /// @param lines Zero or more lines to append to this writer, applying indentation.
+    /// @return Reference to this indenting writer for chaining purposes.
+    public IndentingWriter writeLines(CharSequence... lines) throws IOException {
+        final String lineSeparator = System.lineSeparator();
+        if (!isEolOrNullChar(lastWritten)) {
+            append(lineSeparator);
+        }
+        for (CharSequence line : lines) {
+            append(line).append(lineSeparator);
+        }
+        return this;
     }
 }

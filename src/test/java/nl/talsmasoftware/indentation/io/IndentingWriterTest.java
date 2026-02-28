@@ -214,4 +214,36 @@ class IndentingWriterTest {
                 .isInstanceOf(IndentingWriter.class)
                 .hasToString("abc");
     }
+
+    @Test
+    @DisplayName("writeLines: Nothing is printed if no lines are specified and no unfinished line was present.")
+    void writeLinesWithZeroLines() throws IOException {
+        IndentingWriter subject = new IndentingWriter(new StringWriter(), Indentation.TABS);
+
+        assertThat(subject.writeLines())
+                .isInstanceOf(IndentingWriter.class)
+                .hasToString("");
+    }
+
+    @Test
+    @DisplayName("writeLines: Single newline is printed if no lines are specified but an unfinished line was present.")
+    void writeLinesWithZeroLinesAndUnfinishedLine() throws IOException {
+        IndentingWriter subject = new IndentingWriter(new StringWriter(), Indentation.TABS);
+
+        assertThat(subject.append("unfinished line").writeLines())
+                .isInstanceOf(IndentingWriter.class)
+                .hasToString("unfinished line" + System.lineSeparator());
+    }
+
+    @Test
+    @DisplayName("writeLines: Multiple lines get indentation prefixed.")
+    void writeLinesWithMultipleLines() throws IOException {
+        Indentation indentation = Indentation.TABS.atLevel(1);
+        IndentingWriter subject = new IndentingWriter(new StringWriter(), indentation);
+
+        assertThat(subject.writeLines("first line", "second line"))
+                .isInstanceOf(IndentingWriter.class)
+                .hasToString("\tfirst line" + System.lineSeparator()
+                        + "\tsecond line" + System.lineSeparator());
+    }
 }
