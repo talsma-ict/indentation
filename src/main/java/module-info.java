@@ -17,4 +17,5 @@
 /// Module containing [indentation][nl.talsmasoftware.indentation] utilities for Java.
 module nl.talsmasoftware.indentation {
     exports nl.talsmasoftware.indentation;
+    exports nl.talsmasoftware.indentation.io;
 }
